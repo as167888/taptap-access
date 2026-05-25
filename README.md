@@ -1,10 +1,10 @@
 # taptap-access
 
-Access TapTap website programmatically by bypassing Alibaba Cloud WAF's JS Challenge.
+通过绕过阿里云 WAF 的 JS 挑战，以编程方式访问 TapTap 网站。
 
-## Problem
+## 问题
 
-TapTap (taptap.cn) sits behind Alibaba Cloud WAF, which returns an obfuscated JavaScript challenge page to non-browser HTTP clients. Direct `curl` or `requests` calls get:
+TapTap（taptap.cn）部署在阿里云 WAF 之后，对于非浏览器的 HTTP 请求，WAF 会返回一段混淆后的 JavaScript 挑战页面。直接使用 `curl` 或 `requests` 只能拿到：
 
 ```html
 <textarea id="renderData" style="display:none">
@@ -14,41 +14,41 @@ TapTap (taptap.cn) sits behind Alibaba Cloud WAF, which returns an obfuscated Ja
 <script name="aliyunwaf_6a6f5ea8">...</script>
 ```
 
-The JS computes an `acw_sc__v2` cookie value. Without this cookie, the real content is unreachable.
+这段 JS 会计算出一个 `acw_sc__v2` cookie 的值并写入浏览器。没有这个 cookie，永远拿不到真实内容。
 
-## Solution
+## 解决方案
 
-Use Playwright (headless Chromium) to execute the challenge naturally. The browser runs the WAF's JavaScript, sets the cookie automatically, and the real page loads.
+使用 Playwright（无头 Chromium）来正常执行 JS 挑战。浏览器会自然地运行 WAF 的 JavaScript，自动设置 cookie，然后真实页面就能正常加载。
 
-## Quick Start
+## 快速开始
 
-### 1. Install dependencies
+### 1. 安装 Python 依赖
 
 ```bash
 pip install -r requirements.txt
 playwright install chromium
 ```
 
-### 2. Install system libraries
+### 2. 安装系统依赖库
 
-**With sudo (recommended):**
+**有 sudo 权限（推荐）：**
 ```bash
 playwright install-deps chromium
 ```
 
-**Without sudo:**
+**没有 sudo 权限：**
 ```bash
 bash scripts/install-deps.sh
 export LD_LIBRARY_PATH="$(pwd)/libs/usr/lib/x86_64-linux-gnu"
 ```
 
-### 3. Run the example
+### 3. 运行示例
 
 ```bash
 LD_LIBRARY_PATH="$(pwd)/libs/usr/lib/x86_64-linux-gnu" python example.py
 ```
 
-Output:
+输出示例：
 ```
 Title: TapTap - 发现好游戏
 WAF blocked: False
@@ -57,29 +57,29 @@ Page text (137138 chars):
 根据你的 IP，TapTap 为你准备了体验更好的国际版 ...
 ```
 
-## How It Works
+## 原理
 
-1. **Playwright launches headless Chromium** — a real browser, not an HTTP client
-2. **Chromium executes the WAF's JS challenge** — the obfuscated script computes `acw_sc__v2`
-3. **The cookie is set automatically** — subsequent requests inside the same browser context carry it
-4. **TapTap serves real content** — the page renders normally as if a user was browsing
+1. **Playwright 启动无头 Chromium** — 它是一个真实的浏览器，不是 HTTP 客户端
+2. **Chromium 执行 WAF 的 JS 挑战** — 混淆脚本被正常执行，计算出 `acw_sc__v2`
+3. **Cookie 自动设置** — 同一浏览器上下文内的后续请求自动携带该 cookie
+4. **TapTap 返回真实内容** — 页面像正常用户浏览一样渲染
 
-No cookie algorithm reverse-engineering needed. The WAF updates its challenge freely, and this approach continues to work.
+无需逆向 cookie 生成算法。WAF 可以随时更新挑战逻辑，而这个方案持续有效。
 
-## Project Structure
+## 项目结构
 
 ```
 taptap-access/
   README.md
   requirements.txt
   .gitignore
-  example.py              # Demo: fetch taptap.cn homepage
+  example.py              # 示例：拉取 TapTap 首页
   scripts/
-    install-deps.sh        # Install Chromium system deps without sudo
-  libs/                    # (gitignored) Extracted .so files for no-sudo setups
+    install-deps.sh        # 无 sudo 环境下安装 Chromium 系统依赖
+  libs/                    # (已 gitignore) 提取的 .so 文件，用于无 sudo 环境
 ```
 
-## API Usage
+## 作为模块使用
 
 ```python
 from example import fetch_taptap_page
@@ -87,25 +87,25 @@ from example import fetch_taptap_page
 result = fetch_taptap_page("https://www.taptap.cn")
 print(result["title"])       # "TapTap - 发现好游戏"
 print(result["waf_blocked"]) # False
-print(result["text"][:500])  # Page content
+print(result["text"][:500])  # 页面正文
 ```
 
-## Requirements
+## 环境要求
 
 - Python 3.8+
 - Playwright
-- Chromium (installed via `playwright install chromium`)
-- Ubuntu 22.04 system libraries (see `scripts/install-deps.sh`)
+- Chromium（通过 `playwright install chromium` 安装）
+- Ubuntu 22.04 系统依赖库（见 `scripts/install-deps.sh`）
 
-## Disclaimer
+## 免责声明
 
-This project is for educational and research purposes. When accessing TapTap or any website programmatically:
+本项目仅供学习和研究使用。以编程方式访问 TapTap 或任何网站时，请注意：
 
-- Respect the website's Terms of Service and robots.txt
-- Rate-limit your requests to avoid causing server load
-- Consider using official APIs when available
-- This is not a scraping tool — it only demonstrates WAF bypass technique
+- 遵守目标网站的 Terms of Service 和 robots.txt
+- 控制请求频率，避免对服务器造成压力
+- 如果有官方 API，优先使用官方接口
+- 本项目仅演示 WAF 绕过技术，并非爬虫工具
 
-## License
+## 许可证
 
 MIT
